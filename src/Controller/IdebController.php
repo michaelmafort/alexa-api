@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\View\ViewBuilder;
+
 /**
  * Ideb Controller
  *
@@ -11,22 +13,95 @@ namespace App\Controller;
  */
 class IdebController extends AppController
 {
-    public function search()
+    public function index()
+    {
+        $location = $this->request->getQuery('location');
+        $dependence = $this->request->getQuery('dependence') ?: 'Pública';
+        $locationType = $this->request->getQuery('locationType') ?: 'city';
+        $year = $this->request->getQuery('year') ?: 2017;
+
+        $ideb = $this->search($location, $dependence, $locationType, $year);
+
+        $this->set('ideb', $ideb);
+        $this->viewBuilder()->setOption('serialize', 'ideb');
+    }
+    
+    public function answer()
+    {
+        $location = $this->request->getQuery('location');
+        $dependence = $this->request->getQuery('dependence') ?: 'Pública';
+        $locationType = $this->request->getQuery('locationType') ?: 'city';
+        $year = $this->request->getQuery('year') ?: 2017;
+        $prevYear = $year -2;
+        $ideb = $this->search($location, $dependence, $locationType, $year);
+
+        $phrase = "Nenhum resultado encontrado";
+        
+        if($ideb) {
+
+            $idebPrev = $this->search($location, $dependence, $locationType, $prevYear);
+
+            $translate = [
+                'AI' => 'Anos Iniciais',
+                'AF' => 'Anos Finais',
+                'EM' => 'Ensino Médio',
+                'city' => 'município',
+                'state' => 'estado'
+            ];
+
+            $txt = [];
+            $txtPerf = [];
+            $target = [];
+
+            foreach($ideb as $stage => $data) {
+                $data = (object) $data;
+                
+                $txt[] = "{$data->score} para {$translate[$stage]}";
+                if(isset($idebPrev[$stage])) {
+                    $prev = (object) $idebPrev[$stage];
+                    $scoreResult = $data->score - $prev->score;
+                    $txtPerf[] = ($scoreResult > 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : ($scoreResult == 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : "manteve o mesmo resultado para {$translate[$stage]}"));
+                }  
+
+                if($data->score >= 6) {
+                    $target[] = $translate[$stage];
+                }
+            }
+
+            $txtTarget = "não alcançou idébi 6 para nenhuma etapa avaliada.";
+            if(!empty($target)) {
+                $txtTarget = "alcançou a meta de idébi 6 para " . join(", e ", $target);
+            }
+
+            $txtResult = join(", e ", $txt);
+            $txtResultPerformance = join(", e ", $txtPerf);
+            $phrase = "O resultado do idébi do ano de $year para {$location} foi de {$txtResult}. O desempenho comparado ao ano de {$prevYear} {$txtResultPerformance}. Este {$translate[$locationType]} {$txtTarget}";
+        }
+    
+        $this->set('speak', ['speak' => $phrase]);
+        $this->viewBuilder()->setOption('serialize', 'speak');
+
+    }
+
+    private function search($location, $dependence, $locationType, $year = 2017)
     {
         $ideb = $this->Ideb->find('all', [
             'contain' => ['Locations'], 
             'conditions' => [
-                'Locations.name like' => "%{$this->request->getQuery('location')}%",
-                'Ideb.year' => 2017,
-                'Ideb.network' => 'Total'
+                'Locations.name' => $location,
+                'Locations.type' => $locationType,
+                'Ideb.year' => $year,
+                'Ideb.network' => $dependence
                 ]
             ]
-        )->toArray();
-
-        $ideb = $this->format($ideb);
-
-        $this->set(compact('ideb'));
-        $this->set('_serialize', ['ideb']);
+        )->toArray();  
+        // debug($location);
+        // debug($dependence);
+        // debug($locationType);
+        // debug($ideb);exit;
+        
+        return $this->format($ideb);
+        
     }
 
     public function format($data)
@@ -41,102 +116,7 @@ class IdebController extends AppController
                 'location_type' => $row->location->type
             ];
         }
+
         return $out;
-    }
-    /**
-     * Index method
-     *
-     * @return \Cake\Http\Response|null|void Renders view
-     */
-    public function index()
-    {
-        $this->paginate = [
-            'contain' => ['Locations'],
-        ];
-        $ideb = $this->paginate($this->Ideb);
-
-        $this->set(compact('ideb'));
-    }
-
-    /**
-     * View method
-     *
-     * @param string|null $id Ideb id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function view($id = null)
-    {
-        $ideb = $this->Ideb->get($id, [
-            'contain' => ['Locations'],
-        ]);
-
-        $this->set(compact('ideb'));
-    }
-
-    /**
-     * Add method
-     *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
-     */
-    public function add()
-    {
-        $ideb = $this->Ideb->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $ideb = $this->Ideb->patchEntity($ideb, $this->request->getData());
-            if ($this->Ideb->save($ideb)) {
-                $this->Flash->success(__('The ideb has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The ideb could not be saved. Please, try again.'));
-        }
-        $locations = $this->Ideb->Locations->find('list', ['limit' => 200]);
-        $this->set(compact('ideb', 'locations'));
-    }
-
-    /**
-     * Edit method
-     *
-     * @param string|null $id Ideb id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit($id = null)
-    {
-        $ideb = $this->Ideb->get($id, [
-            'contain' => [],
-        ]);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $ideb = $this->Ideb->patchEntity($ideb, $this->request->getData());
-            if ($this->Ideb->save($ideb)) {
-                $this->Flash->success(__('The ideb has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The ideb could not be saved. Please, try again.'));
-        }
-        $locations = $this->Ideb->Locations->find('list', ['limit' => 200]);
-        $this->set(compact('ideb', 'locations'));
-    }
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id Ideb id.
-     * @return \Cake\Http\Response|null|void Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete($id = null)
-    {
-        $this->request->allowMethod(['post', 'delete']);
-        $ideb = $this->Ideb->get($id);
-        if ($this->Ideb->delete($ideb)) {
-            $this->Flash->success(__('The ideb has been deleted.'));
-        } else {
-            $this->Flash->error(__('The ideb could not be deleted. Please, try again.'));
-        }
-
-        return $this->redirect(['action' => 'index']);
     }
 }
