@@ -30,7 +30,7 @@ class ItemsController extends AppController
             $speek = array_map(function($i) {
                 return $i['item'];
             }, $items);
-            $speek = join(", ", $speek);
+            $speek = ['speek' => join(", ", $speek)];
         } 
         $this->set('speek', $speek);
         $this->viewBuilder()->setOption('serialize', 'speek');
@@ -54,7 +54,6 @@ class ItemsController extends AppController
                 'item' => $this->request->getData('item')
             ];
 
-            Log::debug(print_r($conditions));
             $prev = $this->Items->find('all', ['conditions' => $conditions])->toArray();
 
             if($prev) {
