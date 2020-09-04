@@ -100,16 +100,27 @@ class ItemsController extends AppController
      * @return \Cake\Http\Response|null|void Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete()
     {
-        $this->request->allowMethod(['post', 'delete']);
-        $item = $this->Items->get($id);
-        if ($this->Items->delete($item)) {
-            $this->Flash->success(__('The item has been deleted.'));
-        } else {
-            $this->Flash->error(__('The item could not be deleted. Please, try again.'));
-        }
+        $item = $this->Items->newEmptyEntity();
+        $speek = ['speek' => 'Erro ao remover, tente novamente.'];
 
-        return $this->redirect(['action' => 'index']);
+        if ($this->request->is('post')) {
+
+            $conditions = [
+                'usuario' => $this->request->getData('usuario'), 
+                'local' => $this->request->getData('local'), 
+                'item' => $this->request->getData('item')
+            ];
+
+            $item = $this->Items->find('all', ['conditions' => $conditions])->first();
+
+            if($item && $this->Items->delete($item)) {
+                $speek = ['speek' => 'Item removido'];
+            }
+        }
+        $this->set('speek', $speek);
+        $this->viewBuilder()->setOption('serialize', 'speek');
     }
+
 }
