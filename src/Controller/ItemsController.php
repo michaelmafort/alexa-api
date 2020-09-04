@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Log\Log;
+
 /**
  * Items Controller
  *
@@ -46,7 +48,14 @@ class ItemsController extends AppController
 
         if ($this->request->is('post')) {
 
-            $prev = $this->Items->find('all', ['conditions' => ['local' => $this->request->getData('local'), 'item' => $this->request->getData('item')]])->toArray();
+            $conditions = [
+                'usuario' => $this->request->getData('usuario'), 
+                'local' => $this->request->getData('local'), 
+                'item' => $this->request->getData('item')
+            ];
+
+            Log::debug(print_r($conditions));
+            $prev = $this->Items->find('all', ['conditions' => $conditions])->toArray();
 
             if($prev) {
                 $speek = ['speek' => 'Item já está registrado'];
