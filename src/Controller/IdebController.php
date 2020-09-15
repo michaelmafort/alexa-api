@@ -93,7 +93,14 @@ class IdebController extends AppController
                 'Locations.name' => $location,
                 'Locations.type' => $locationType,
                 'Ideb.year' => $year,
-                'Ideb.network' => $dependence
+                'OR' => [
+                    'Ideb.network' => $dependence,
+                    'AND' => [
+                        'Ideb.network' => 'Estadual',
+                        'length(Ideb.location_id) <' => 6,
+                        'Ideb.stage' => 'EM'
+                    ]
+                ]
                 ]
             ]
         )->toArray();  
