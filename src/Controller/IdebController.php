@@ -13,12 +13,14 @@ use Cake\View\ViewBuilder;
  */
 class IdebController extends AppController
 {
+    const IDEB_YEAR = 2019;
+
     public function index()
     {
         $location = $this->request->getQuery('location');
         $dependence = $this->request->getQuery('dependence') ?: 'Pública';
         $locationType = $this->request->getQuery('locationType') ?: 'city';
-        $year = $this->request->getQuery('year') ?: 2017;
+        $year = $this->request->getQuery('year') ?: self::IDEB_YEAR;
 
         $ideb = $this->search($location, $dependence, $locationType, $year);
 
@@ -31,7 +33,7 @@ class IdebController extends AppController
         $location = $this->request->getQuery('location');
         $dependence = $this->request->getQuery('dependence') ?: 'Pública';
         $locationType = $this->request->getQuery('locationType') ?: 'city';
-        $year = $this->request->getQuery('year') ?: 2017;
+        $year = $this->request->getQuery('year') ?: self::IDEB_YEAR;
         $prevYear = $year -2;
         $ideb = $this->search($location, $dependence, $locationType, $year);
 
@@ -95,10 +97,6 @@ class IdebController extends AppController
                 ]
             ]
         )->toArray();  
-        // debug($location);
-        // debug($dependence);
-        // debug($locationType);
-        // debug($ideb);exit;
         
         return $this->format($ideb);
         
