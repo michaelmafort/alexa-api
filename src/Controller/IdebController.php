@@ -59,18 +59,11 @@ class IdebController extends AppController
 
             foreach($ideb as $stage => $data) {
                 $data = (object) $data;
-                
                 $txt[] = "{$data->score} para {$translate[$stage]}";
-
-                if(isset($idebResults[$year]) == false) {
-                    $idebResults[$year] = [];
-                    $idebResults[$prevYear] = [];
-                }
-
-                $idebResults[$year][$stage] = $data->score;
+                $idebResults["{$stage}_{$year}"] = $data->score;
                 if(isset($idebPrev[$stage])) {
                     $prev = (object) $idebPrev[$stage];
-                    $idebResults[$prevYear][$stage] = $prev->score;
+                    $idebResults["{$stage}_{$prevYear}"] = $prev->score;
                     $scoreResult = $data->score - $prev->score;
                     $txtPerf[] = ($scoreResult > 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : ($scoreResult == 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : "manteve o mesmo resultado para {$translate[$stage]}"));
                 }  
@@ -92,7 +85,7 @@ class IdebController extends AppController
             $phrase = "O resultado do idébi do ano de $year para {$location} foi de {$txtResult}. O desempenho comparado ao ano de {$prevYear} {$txtResultPerformance}. Este {$translate[$locationType]} {$txtTarget}";
         }
     
-        $this->set('speak', ['speak' => $phrase, 'ideb' => $idebResults, "successMessage" => $successMessage]);
+        $this->set('speak', ['speak' => $phrase, 'ideb' => $idebResults, "successMessage" => $successMessage, "prevYear" => $prevYear, "year" => $year]);
         $this->viewBuilder()->setOption('serialize', 'speak');
 
     }
