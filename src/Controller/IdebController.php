@@ -96,7 +96,7 @@ class IdebController extends AppController
                     $prev = (object) $idebPrev[$stage];
                     $idebResults["{$stage}_{$prevYear}"] = $prev->score;
                     $scoreResult = $data->score - $prev->score;
-                    $txtPerf[] = ($scoreResult > 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : ($scoreResult == 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : "manteve o mesmo resultado para {$translate[$stage]}"));
+                    $txtPerf[] = ($scoreResult > 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : ($scoreResult < 0 ? "reduziu {$scoreResult} para {$translate[$stage]}" : "manteve o mesmo resultado para {$translate[$stage]}"));
                 }  
 
                 if($data->score >= 6) {
