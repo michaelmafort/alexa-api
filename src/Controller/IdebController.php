@@ -55,12 +55,22 @@ class IdebController extends AppController
             $txtPerf = [];
             $target = [];
 
+            $idebResults = [];
+
             foreach($ideb as $stage => $data) {
                 $data = (object) $data;
                 
                 $txt[] = "{$data->score} para {$translate[$stage]}";
+
+                if(isset($idebResults[$year]) == false) {
+                    $idebResults[$year] = [];
+                    $idebResults[$prevYear] = [];
+                }
+
+                $idebResults[$year][$stage] = $data->score;
                 if(isset($idebPrev[$stage])) {
                     $prev = (object) $idebPrev[$stage];
+                    $idebResults[$prevYear][$stage] = $prev->score;
                     $scoreResult = $data->score - $prev->score;
                     $txtPerf[] = ($scoreResult > 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : ($scoreResult == 0 ? "aumentou {$scoreResult} para {$translate[$stage]}" : "manteve o mesmo resultado para {$translate[$stage]}"));
                 }  
@@ -71,8 +81,10 @@ class IdebController extends AppController
             }
 
             $txtTarget = "não alcançou idébi 6 para nenhuma etapa avaliada.";
+            $successMessage = false;
             if(!empty($target)) {
                 $txtTarget = "alcançou a meta de idébi 6 para " . join(", e ", $target);
+                $successMessage = "Alcançou IDEB 6 para " . join(" e ", $target) . "!";
             }
 
             $txtResult = join(", e ", $txt);
@@ -80,7 +92,7 @@ class IdebController extends AppController
             $phrase = "O resultado do idébi do ano de $year para {$location} foi de {$txtResult}. O desempenho comparado ao ano de {$prevYear} {$txtResultPerformance}. Este {$translate[$locationType]} {$txtTarget}";
         }
     
-        $this->set('speak', ['speak' => $phrase]);
+        $this->set('speak', ['speak' => $phrase, 'ideb' => $idebResults, "successMessage" => $successMessage]);
         $this->viewBuilder()->setOption('serialize', 'speak');
 
     }
